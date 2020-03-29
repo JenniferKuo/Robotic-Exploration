@@ -51,18 +51,21 @@ class RRTStar():
         # this "if-statement" is not complete, you need complete this "if-statement"
         # you need to check the path is legal or illegal, you can use the function "self._check_collision"
         # illegal
-        if new_node[1]<0 or new_node[1]>=self.map.shape[0] or new_node[0]<0 or new_node[0]>=self.map.shape[1]
+        if new_node[1]<0 or new_node[1]>=self.map.shape[0] or new_node[0]<0 or new_node[0]>=self.map.shape[1] or self._check_collision(from_node, new_node):
         ####################################################################################################################################################
             return False, None
         # legal
         else:        
             return new_node, self._distance(new_node, from_node)
     
+    # RRT*會檢查new node的radius範圍的所有node，檢查哪一個節點的cost最小來當成他的parent
     def _near_node(self, node, radius):
         nlist = []
         for n in self.ntree:
+            # 檢查是否是new node本身，或者是會碰撞
             if n == node or self._check_collision(n,node):
                 continue
+            # 把範圍內的節點都加入nlist中
             if self._distance(n, node) <= radius:
                 nlist.append(n)
         return nlist
@@ -82,8 +85,8 @@ class RRTStar():
                 # todo
                 ###################################################################
                 # after creat a new node in a tree, we need to maintain something
-                self.ntree[""" """] = 
-                self.cost[""" """] = 
+                self.ntree[new_node] = near_node
+                self.cost[new_node] = cost + self.cost[near_node]
                 ###################################################################
             else:
                 continue
@@ -93,25 +96,27 @@ class RRTStar():
         
             # Re-Parent
             nlist = self._near_node(new_node, 100)
+            # 檢查new node周圍範圍內的所有節點，找出cost最小的當作new_node的parent
             for n in nlist:
                 cost = self.cost[n] + self._distance(n, new_node)
                 if cost < self.cost[new_node]:
                     # todo
                     ###################################################################
                     # update the new node's distance
-                    self.ntree[""" """] = 
-                    self.cost[""" """] = 
+                    self.ntree[new_node] = n
+                    self.cost[new_node] = cost
                     ###################################################################
 
             # Re-Wire
+            # 檢查new node周圍範圍內的所有節點，將new node當作某一節點的parent，使其cost最小
             for n in nlist:
                 cost = self.cost[new_node] + self._distance(n, new_node)
                 if cost < self.cost[n]:
                     # todo
                     ###################################################################
                     # update the near node's distance
-                    self.ntree[""" """] = 
-                    self.cost[""" """] = 
+                    self.ntree[n] = new_node
+                    self.cost[n] = cost
                     ###################################################################
 
             # Draw

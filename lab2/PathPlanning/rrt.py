@@ -11,14 +11,18 @@ class RRT():
         return np.hypot(d[0], d[1])
 
     def _random_node(self, goal, shape):
+        # 從0~1隨機選擇，一次選一個數字，兩個數字被選中的機率各是0.5，所以有0.5的機率直接選中goal
         r = np.random.choice(2,1,p=[0.5,0.5])
         if r==1:
+            # 直接選中goal
             return (float(goal[0]), float(goal[1]))
         else:
+            # 從goal以外的節點選擇
             rx = float(np.random.randint(int(shape[1])))
             ry = float(np.random.randint(int(shape[0])))
             return (rx, ry)
 
+    # 找到與抽樣節點最接近的節點
     def _nearest_node(self, samp_node):
         min_dist = 99999
         min_node = None
@@ -29,10 +33,13 @@ class RRT():
                 min_node = n
         return min_node
 
+    # 檢查節點之間是否會碰撞到障礙物
     def _check_collision(self, n1, n2):
         n1_ = pos_int(n1)
         n2_ = pos_int(n2)
+        # 用在點陣圖上的畫直線演算法
         line = Bresenham(n1_[0], n2_[0], n1_[1], n2_[1])
+        # 檢查直線上的每一個點，是否包含地圖中的障礙物
         for pts in line:
             if self.map[int(pts[1]),int(pts[0])]<0.5:
                 return True
@@ -40,18 +47,22 @@ class RRT():
 
     def _steer(self, from_node, to_node, extend_len):
         vect = np.array(to_node) - np.array(from_node)
+        # 相當於sqrt(x*x + y*y)，回傳三角形的斜邊長，這裡是計算兩節點之間向量的長度
         v_len = np.hypot(vect[0], vect[1])
+        # 用arctan來求得向量的角度theta
         v_theta = np.arctan2(vect[1], vect[0])
-        # at least extend_len
+        # at least extend_len，兩節點之間的距離長度至少要比extend_len大
         if extend_len > v_len:
             extend_len = v_len
+        # 在向量方向上，用extend_len的距離新建一個節點出來
         new_node = (from_node[0]+extend_len*np.cos(v_theta), from_node[1]+extend_len*np.sin(v_theta))
         # todo
         ####################################################################################################################################################
         # this "if-statement" is not complete, you need complete this "if-statement"
         # you need to check the path is legal or illegal, you can use the function "self._check_collision"
         # illegal
-        if new_node[1]<0 or new_node[1]>=self.map.shape[0] or new_node[0]<0 or new_node[0]>=self.map.shape[1]
+        # 檢查這個新節點，是否會碰撞到障礙物，或是超出邊界
+        if new_node[1]<0 or new_node[1]>=self.map.shape[0] or new_node[0]<0 or new_node[0]>=self.map.shape[1] or self._check_collision(from_node, new_node):
         ####################################################################################################################################################
             return False, None
         # legal
@@ -73,8 +84,10 @@ class RRT():
                 # todo
                 ###################################################################
                 # after creat a new node in a tree, we need to maintain something
-                self.ntree[""" """] = 
-                self.cost[""" """] = 
+                # 把新產生的節點的parent設為距離最近的節點
+                self.ntree[new_node] = near_node
+                # 更新cost 
+                self.cost[new_node] = cost + self.cost[near_node]
                 ###################################################################
             else:
                 continue
@@ -102,8 +115,10 @@ class RRT():
         n = goal_node
         while(True):
             path.insert(0,n)
+            # 如果節點已經沒有parent了，代表結束
             if self.ntree[n] is None:
                 break
+            # node是節點n的parent
             node = self.ntree[n]
             n = self.ntree[n] 
         path.append(goal)

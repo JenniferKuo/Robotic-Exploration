@@ -49,34 +49,40 @@ class AStar():
                     min_dist = f
                     min_id = i
 
-            # pop the nearest node 
+            # pop the nearest node，p是目前拿出的節點
             p = self.queue.pop(min_id)
 
-            # meet obstacle, skip
+            # meet obstacle, skip，如果目前節點存在於地圖中
             if self.map[p[1],p[0]]<0.5:
                 
                 continue
-            # find goal
+            # find goal，用距離判斷已經到終點
             if self._distance(p,goal) < inter:
                 self.goal_node = p
                 break
 
             # eight direction
+            # 目前節點周圍的八個節點，下右上左，右下右上左上左下
             pts_next1 = [(p[0]+inter,p[1]), (p[0],p[1]+inter), (p[0]-inter,p[1]), (p[0],p[1]-inter)]
             pts_next2 = [(p[0]+inter,p[1]+inter), (p[0]-inter,p[1]+inter), (p[0]-inter,p[1]-inter), (p[0]+inter,p[1]-inter)]
             pts_next = pts_next1 + pts_next2
-
+            
             for pn in pts_next:
+                # 如果鄰近的節點，不是任何節點的parent
                 if pn not in self.parent:
+                    # 就把他放進queue
                     self.queue.append(pn)
+                    # 並把鄰近節點的parent設為剛剛選中的節點
                     self.parent[pn] = p
+                    # 設置鄰近節點的g
                     self.g[pn] = self.g[p] + inter
                     #todo
                     ##############################################
                     
                     # update the estimation
-
+                    self.h[pn] = self._distance(pn, goal)
                     ##############################################
+                # 如果鄰近節點離起點的距離，比目前節點加上間距的距離還大，代表有往前移動，則更新鄰近節點的g
                 elif self.g[pn]>self.g[p] + inter:
                     self.parent[pn] = p
                     self.g[pn] = self.g[p] + inter
@@ -94,6 +100,7 @@ class AStar():
         # Extract path
         path = []
         p = self.goal_node
+        # 從終點一直往上數parent，取出規劃的路徑
         while(True):
             path.insert(0,p)
             if self.parent[p] == None:
@@ -108,6 +115,7 @@ if __name__ == "__main__":
     img = cv2.flip(cv2.imread("../Maps/map2.png"),0)
     img[img>128] = 255
     img[img<=128] = 0
+    # m是創建地圖
     m = np.asarray(img)
     m = cv2.cvtColor(m, cv2.COLOR_RGB2GRAY)
     m = m.astype(float) / 255.
