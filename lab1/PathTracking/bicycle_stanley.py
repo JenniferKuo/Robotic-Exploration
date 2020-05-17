@@ -31,26 +31,26 @@ class StanleyControl:
         # todo
         #############################################################################
 
-        # all parameter name (ex:alpha) comes from the Slides
-        # You need to finish the Stanley control algo
-
-        # step by step
-        # first you need to find the nearest point on the path(centered on the front wheel, previous work all on the back wheel)
-        min_idx, min_dist = self._search_nearest((x + l*np.cos(np.deg2rad(yaw)), y + l*np.sin(np.deg2rad(yaw))))
+        xf = x + l*np.cos(np.deg2rad(yaw))
+        yf = y + l*np.sin(np.deg2rad(yaw))
+        min_idx, min_dist = self._search_nearest((xf, yf))
+        # min_idx, min_dist = self._search_nearest((x + l*np.cos(np.deg2rad(yaw)), y + l*np.sin(np.deg2rad(yaw))))
         target = self.path[min_idx]
         # second you need to calculate the theta_e by use the "nearest point's yaw" and "model's yaw"
         # theta_p是路徑切線方向與世界座標之間的夾角
-        theta_p = np.deg2rad(target[2])
-        theta = np.deg2rad(yaw)
-        theta_e = theta_p - theta
+        theta_p = target[2]
+        theta_e = (theta_p - yaw) % 360
+        # handling over 180 degrees cases
+        if theta_e > 180:
+            theta_e = -(360 - theta_e)
         # third you need to calculate the v front(vf) and error(e)
-        # v = vf * cos(delta)
+        # 由於v = vf * cos(delta)
         vf = v / np.cos(np.deg2rad(delta))
-        e = np.inner(np.array([x - target[0], y - target[1]]), np.array([np.cos(theta_p + 90), np.sin(theta_p + 90)]))
+        A = [[xf-target[0], yf-target[1]]]
+        B = [[np.cos(np.deg2rad(theta_p + 90))], [np.sin(np.deg2rad(theta_p + 90))]]
+        e = np.dot(A,B)
         # now, you can calculate the delta
-        next_delta = np.arctan2(-self.kp*e, vf) + np.rad2deg(theta_e)
-        # The next_delta is Stanley Control's output
-        # The target is the point on the path which you find
+        next_delta = int(np.rad2deg(np.arctan2(-self.kp*e, vf)) + theta_e)
         ###############################################################################
         return next_delta, target
 
